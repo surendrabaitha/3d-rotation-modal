@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Interaction</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        #container {
+            width: 90%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 80vh;
+            background: #f7f7f8;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+      
+        #shop{
+            padding: 12px 20px;
+            border-radius: 100px ;
+            background-color: red;
+            color: white;
+            border:none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>3D Model Interaction Effects</h1>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Nobis asperiores soluta enim aliquid, consequatur corporis nam aliquam, deserunt odio corrupti perferendis doloremque voluptatum neque tempora in quos iste. Sunt, earum?.</p>
+        <div id="canvas-container">
+            <div id="particles-js"></div>
+        </div>
+        <div id="popup">
+            <h2>Congratulations!</h2>
+            <p>Lorem ipsum dolor sit amet.</p>
+            <button id="shop">Shop Now</button>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <script>
+        // Scene, Camera, Renderer setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const canvasContainer = document.getElementById('canvas-container');
+        const btn  = document.querySelector('#shop');
+        renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        canvasContainer.appendChild(renderer.domElement);
+
+        // Load the GLB model
+        const loader = new THREE.GLTFLoader();
+        let model;
+        loader.load('./Bag.glb', function(gltf) {
+            model = gltf.scene;
+            model.scale.set(8, 8, 8); // Increase model size by scaling it
+            scene.add(model);
+            model.position.set(0, 0, 0);
+            animate();
+        }, undefined, function(error) {
+            console.error('An error occurred while loading the model', error);
+        });
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 5, 5).normalize();
+        scene.add(directionalLight);
+
+        // Camera position
+        camera.position.z = 10;
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        });
+
+        // Mouse and touch move interaction
+        let isMouseDown = false;
+        let startX, startY, endX, endY;
+
+        const onMouseDown = (event) => {
+            isMouseDown = true;
+            startX = event.clientX;
+            startY = event.clientY;
+        };
+
+        const onMouseMove = (event) => {
+            if (isMouseDown && model) {
+                endX = event.clientX;
+                endY = event.clientY;
+                const deltaX = (endX - startX) * 0.005;
+                const deltaY = (endY - startY) * 0.005;
+                model.rotation.y += deltaX;
+                model.rotation.x += deltaY;
+                startX = endX;
+                startY = endY;
+            }
+        };
+
+        const onMouseUp = () => {
+            isMouseDown = false;
+        };
+
+        const onTouchStart = (event) => {
+            if (event.touches.length === 1) {
+                isMouseDown = true;
+                startX = event.touches[0].clientX;
+                startY = event.touches[0].clientY;
+            }
+        };
+
+        const onTouchMove = (event) => {
+            if (isMouseDown && model && event.touches.length === 1) {
+                endX = event.touches[0].clientX;
+                endY = event.touches[0].clientY;
+                const deltaX = (endX - startX) * 0.005;
+                const deltaY = (endY - startY) * 0.005;
+                model.rotation.y += deltaX;
+                model.rotation.x += deltaY;
+                startX = endX;
+                startY = endY;
+            }
+        };
+
+        const onTouchEnd = () => {
+            isMouseDown = false;
+        };
+
+        canvasContainer.addEventListener('mousedown', onMouseDown);
+        canvasContainer.addEventListener('mousemove', onMouseMove);
+        canvasContainer.addEventListener('mouseup', onMouseUp);
+        canvasContainer.addEventListener('touchstart', onTouchStart);
+        canvasContainer.addEventListener('touchmove', onTouchMove);
+        canvasContainer.addEventListener('touchend', onTouchEnd);
+
+        // Animation function
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Particle effect on model click
+        canvasContainer.addEventListener('dblclick', () => {
+            confetti({
+                particleCount: 400,
+                spread: 90,
+                decay:0.9,
+                origin: { y: 0.6 }
+                });
+            // Show popup
+            
+            // Redirect after 3 seconds
+            setTimeout(() => {
+                const popup = document.getElementById('popup');
+            popup.style.display = 'block';
+
+             
+            }, 2000);
+        });
+
+        btn.addEventListener('click', ()=>{ 
+            window.location.href = 'https://mediakart.org/index.html';
+        })
+    </script>
+</body>
+</html>
